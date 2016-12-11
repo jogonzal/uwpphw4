@@ -19,8 +19,6 @@ if __name__ == "__main__":
 	with open(inputFilePath) as f:
 		for line in f:
 			inner_list = [elt.strip() for elt in line.split(',')]
-			# in alternative, if you need to use the file content as numbers
-			# inner_list = [int(elt.strip()) for elt in line.split(',')]
 			for element in inner_list:
 				# print("Converting..." + str(element));
 				elementAsIngeger = int(element);
@@ -45,11 +43,11 @@ if __name__ == "__main__":
 			acc += vector[i]*matrix[index * dimension + i];
 		return acc;
 		
-	result = spark.sparkContext.parallelize(range(0, n), 1).map(f).collect();
+	result = spark.sparkContext.parallelize(range(0, n), 1).map(f).collect(); # Note that there's no need to reduce here
 	print("The resulting vector is " + str(result));
 	thefile = open('output.txt', 'w');
 	thefile.seek(0);
 	for item in result:
-		thefile.write("%s\n" % item)
+		thefile.write("%s\n" % item);
 	print("Wrote result to output.txt");
 	spark.stop();
