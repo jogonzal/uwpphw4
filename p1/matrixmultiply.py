@@ -3,7 +3,7 @@ import sys
 from pyspark.sql import SparkSession
 if __name__ == "__main__":
 	"""
-		Usage: pi [partitions]
+		Usage: matrixmultiply
 	"""
 	spark = SparkSession\
 	.builder\
@@ -11,7 +11,10 @@ if __name__ == "__main__":
 	.getOrCreate();
 	# Assumming we already have the matrix in a variable
 	# Matrix is 4x4
-	matrix = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+	matrix = [	0, 1, 2, 3,
+				4, 5, 6, 7,
+				8, 9, 10, 11,
+				12, 13, 14, 15];
 	# Vector
 	vector = [0, 1, 2, 3];
 	
@@ -26,5 +29,5 @@ if __name__ == "__main__":
 		return acc;
 		
 	result = spark.sparkContext.parallelize(range(0, n), 1).map(f).collect();
-	print("The sum of what I got is %d" + str(result));
+	print("The resulting vector is " + str(result));
 	spark.stop();
