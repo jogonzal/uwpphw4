@@ -45,3 +45,5 @@ Nodes:
 	[3] Node 3, level 0
 
 And so on. The vertex and nodes can be counted as we increase levels in each node and are returned by each worker.
+
+To run the code, run "make run". There is no compilation step, as we used python.
