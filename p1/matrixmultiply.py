@@ -3,24 +3,41 @@ import sys
 from pyspark.sql import SparkSession
 if __name__ == "__main__":
 	"""
-		Usage: matrixmultiply
+		Usage: matrixmultiply INPUTFILE
 	"""
 	spark = SparkSession\
 	.builder\
 	.appName("PythonPi")\
 	.getOrCreate();
-	# Assumming we already have the matrix in a variable
-	# Matrix is 4x4
-	matrix = [	0, 1, 2, 3,
-				4, 5, 6, 7,
-				8, 9, 10, 11,
-				12, 13, 14, 15];
-	# Vector
-	vector = [0, 1, 2, 3];
+
+	if len(sys.argv) != 2:
+		raise ValueError('Usage: matrixmultiply INPUTFILE');
 	
-	dimension = len(vector);
+	inputFilePath = sys.argv[1];
+	
+	allNumbersInFile = []
+	with open(inputFilePath) as f:
+		for line in f:
+			inner_list = [elt.strip() for elt in line.split(',')]
+			# in alternative, if you need to use the file content as numbers
+			# inner_list = [int(elt.strip()) for elt in line.split(',')]
+			for element in inner_list:
+				# print("Converting..." + str(element));
+				elementAsIngeger = int(element);
+				allNumbersInFile.append(elementAsIngeger);
+	
+	# print(str(allNumbersInFile));
+
+	dimension = allNumbersInFile[0];
 	n = dimension;
-	
+
+	matrix = [None] * dimension * dimension;
+	vector = [None] * dimension;
+	for i in range(2, dimension * dimension + 2):
+		matrix[i - 2] = allNumbersInFile[i];
+	for i in range(0, dimension):
+		vector[i] = allNumbersInFile[dimension*dimension+2+i];
+
 	def f(index):
 		print("Multiplying " + str(index));
 		acc = 0;
@@ -30,4 +47,9 @@ if __name__ == "__main__":
 		
 	result = spark.sparkContext.parallelize(range(0, n), 1).map(f).collect();
 	print("The resulting vector is " + str(result));
+	thefile = open('output.txt', 'w');
+	thefile.seek(0);
+	for item in result:
+		thefile.write("%s\n" % item)
+	print("Wrote result to output.txt");
 	spark.stop();
