@@ -34,8 +34,13 @@ if __name__ == "__main__":
 				('k', 'i'),
 				];
 
+	Verbose = False;
 	rootNode = 'd';
-				
+	
+	def printVerbose(message):
+		if Verbose:
+			printVerbose(message);
+	
 	def getOrCreateNode(dict, nodeId, nodeCount):
 		if nodeId in dict:
 			return dict[nodeId], nodeCount;
@@ -55,9 +60,9 @@ if __name__ == "__main__":
 		transformedConnections.add((nodeLeft, nodeRight));
 	
 	connectionCount = len(transformedConnections);
-	print("Nodes: " + str(nodeCount) + " Connections: " + str(connectionCount));
-	print("Node dictionary: " + str(nodeDict));
-	print("Transformed connections: " + str(transformedConnections));
+	printVerbose("Nodes: " + str(nodeCount) + " Connections: " + str(connectionCount));
+	printVerbose("Node dictionary: " + str(nodeDict));
+	printVerbose("Transformed connections: " + str(transformedConnections));
 	
 	nodeVisited = [-1] * nodeCount;
 	rootNodePosition = nodeDict[rootNode];
@@ -68,7 +73,7 @@ if __name__ == "__main__":
 		connectionsArray[offset] = connection;
 		offset+=1;
 	
-	print("Visited dictionary = " + str(nodeVisited));
+	printVerbose("Visited dictionary = " + str(nodeVisited));
 	
 	# At this point, we have an array of connections in "transformedConnections" and the array of visited nodes at "nodeVisited"
 	
@@ -82,36 +87,45 @@ if __name__ == "__main__":
 		else:
 			chunkSizes[i] = genericChunkSize;
 	
-	print("Chunks: " + str(chunkSizes));
+	printVerbose("Chunks: " + str(chunkSizes));
 
 
 	def f(index):
 		nodesFound = set();
+		vertexCount = 0;
 		initialOffset = index * genericChunkSize;
 		endOffset = initialOffset + chunkSizes[index];
-		print("Going from " + str(initialOffset) + " to " + str(endOffset) +". Current level is " + str(currentLevel) + ".");
+		printVerbose("Going from " + str(initialOffset) + " to " + str(endOffset) +". Current level is " + str(currentLevel) + ".");
 		for i in range(initialOffset, endOffset):
 			localConnection = connectionsArray[i];
 			nodeLeft = localConnection[0];
 			nodeRight = localConnection[1];
 			if nodeVisited[nodeLeft] == currentLevel and nodeVisited[nodeRight] == -1:
 				nodesFound.add(nodeRight);
+				vertexCount+=1;
 			if nodeVisited[nodeRight] == currentLevel and nodeVisited[nodeLeft] == -1:
 				nodesFound.add(nodeLeft);
-		return nodesFound;
+				vertexCount+=1;
+		return (nodesFound, vertexCount);
 		
 	currentLevel = 0;
 	shouldContinue = True;
-	
+	globalVertexCount = 0;
 	while shouldContinue:
 		result = spark.sparkContext.parallelize(range(0, workerCount), 1).map(f).collect();
 		
-		print("the resulting vector is " + str(result));
+		printVerbose("the resulting vector is " + str(result));
+		
 		currentLevel+=1;
+		
 		newNodesFound = set();
-		for individualSet in result:
+		for individualResult in result:
+			individualSet = individualResult[0];
 			for element in individualSet:
 				newNodesFound.add(element);
+			localVertexCount = individualResult[1];
+			globalVertexCount+=localVertexCount;
+			
 		discoveredNewNodes = False;
 		for newNodeFound in newNodesFound:
 			if nodeVisited[newNodeFound] == -1:
@@ -127,6 +141,10 @@ if __name__ == "__main__":
 	
 		# Continue if there are more 1's to discover and if there were some nodes visited
 		shouldContinue = nodesLeftToDiscover and discoveredNewNodes;
-		print("New levels are : " + str(nodeVisited));
-		print("Should continue : " + str(shouldContinue));
+		printVerbose("New levels are : " + str(nodeVisited));
+		printVerbose("Should continue : " + str(shouldContinue));
 	spark.stop();
+	
+	globalMaxLevel = currentLevel;
+	
+	print("Graph vertices: " + str(nodeCount) + " with total edges " + str(inputConnectionCount*2) + ". Reached vertices from " + str(rootNode) + " are " + str(globalVertexCount) + " and max level is " + str(globalMaxLevel));
